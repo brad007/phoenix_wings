@@ -3,11 +3,10 @@ import 'dart:math';
 
 import 'package:phoenix_wings/src/phoenix_channel.dart';
 import 'package:phoenix_wings/src/phoenix_connection.dart';
+import 'package:phoenix_wings/src/phoenix_io_connection.dart';
 import 'package:phoenix_wings/src/phoenix_message.dart';
 import 'package:phoenix_wings/src/phoenix_serializer.dart';
 import 'package:phoenix_wings/src/phoenix_socket_options.dart';
-
-import 'package:phoenix_wings/src/phoenix_io_connection.dart';
 
 class PhoenixSocket {
   Uri? _endpoint;
@@ -92,11 +91,14 @@ class PhoenixSocket {
 
     _connecting = true;
 
-    for (int tries = 0; _conn == null && _connecting; tries += 1) {
+    bool hasSucceeded = true;
+    for (int tries = 0; _conn == null && _connecting && tries < 5; tries += 1) {
+      hasSucceeded = true;
       try {
         _conn = _connectionProvider(_endpoint.toString());
         await _conn!.waitForConnection();
       } catch (reason) {
+        hasSucceeded = false;
         _conn = null;
         print(
             "WebSocket connection to ${_endpoint.toString()} failed!: $reason");
@@ -116,6 +118,11 @@ class PhoenixSocket {
           ..onMessage(_onConnMessage)
           ..onError(_onConnectionError);
       }
+    }
+
+    if (hasSucceeded == false) {
+      throw Exception(
+          "Unable to connect to the server. Please check your internet connection and try again.");
     }
   }
 
