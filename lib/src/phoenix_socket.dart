@@ -108,7 +108,7 @@ class PhoenixSocket {
 
         continue;
       }
-
+      // test
       _reconnect = true;
       _onConnOpened();
 
